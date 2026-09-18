@@ -2,6 +2,7 @@ const express = require("express")
 const validator = require("validator")
 const { userModel } = require("../models/User.model")
 const { isLoggedIn } = require("../middleware/isLoggedIn.middleware")
+const { followModel } = require("../models/follow.model")
 
 const router = express.Router()
 
@@ -69,6 +70,7 @@ router.put("/completeProfile", isLoggedIn, async (req, res) => {
             success: true,
             msg: "user profile is complete",
             data: {
+                 _id: foundUser._id,
                 firstName: foundUser.firstName,
                 lastName: foundUser.lastName,
                 username: foundUser.username,
@@ -79,9 +81,10 @@ router.put("/completeProfile", isLoggedIn, async (req, res) => {
                 coverPicture: foundUser.coverPicture,
                 bio: foundUser.bio,
                 isCompletedProfile: foundUser.isCompletedProfile,
-                followers: foundUser.followers,
-                following: foundUser.following,
-                posts: foundUser.posts,
+                followersCount: foundUser.followersCount,
+                followingCount: foundUser.followingCount,
+                postCount: foundUser.postCount,
+                thoughtCount: foundUser.thoughtCount,
                 createdAt: foundUser.createdAt
             }
         })
@@ -195,6 +198,7 @@ router.patch("/update", isLoggedIn, async (req, res) => {
             msg: "User profile updated successfully",
 
             data: {
+                 _id: foundUser._id,
                 firstName: foundUser.firstName,
                 lastName: foundUser.lastName,
                 username: foundUser.username,
@@ -205,9 +209,10 @@ router.patch("/update", isLoggedIn, async (req, res) => {
                 coverPicture: foundUser.coverPicture,
                 bio: foundUser.bio,
                 isCompletedProfile: foundUser.isCompletedProfile,
-                followers: foundUser.followers,
-                following: foundUser.following,
-                posts: foundUser.posts,
+                followersCount: foundUser.followersCount,
+                followingCount: foundUser.followingCount,
+                postCount: foundUser.postCount,
+                thoughtCount: foundUser.thoughtCount,
                 createdAt: foundUser.createdAt,
             }
         })
@@ -221,6 +226,59 @@ router.patch("/update", isLoggedIn, async (req, res) => {
     }
 })
 
+
+router.get("/user/:userId", isLoggedIn, async (req, res) => {
+    try {
+        const id = req.params.userId
+        const loggedInUser=req.foundUser._id
+
+        const foundUser = await userModel
+            .findById(id)
+            .select("-password")
+
+        if (!foundUser) {
+            return res.status(404).json({
+                success: false,
+                msg: "User not found"
+            })
+        }
+
+        const isFollowing=await followModel.exists({follower:loggedInUser,
+            following:foundUser._id
+        })?true:false
+
+        return res.status(200).json({
+            success: true,
+            msg: "User found",
+            data:{
+                _id: foundUser._id,
+                firstName: foundUser.firstName,
+                lastName: foundUser.lastName,
+                username: foundUser.username,
+                email: foundUser.email,
+                gender: foundUser.gender,
+                dateOfBirth: foundUser.dateOfBirth,
+                displayPicture: foundUser.displayPicture,
+                coverPicture: foundUser.coverPicture,
+                bio: foundUser.bio,
+                followersCount: foundUser.followersCount,
+                followingCount: foundUser.followingCount,
+                postCount: foundUser.postCount,
+                thoughtCount: foundUser.thoughtCount,
+                createdAt:foundUser.createdAt,
+                isFollowing
+            }
+        })
+
+    } catch (error) {
+        console.log(error)
+
+        return res.status(500).json({
+            success: false,
+            msg: "Unable to get user profile"
+        })
+    }
+})
 
 module.exports = {
     profileRouter: router

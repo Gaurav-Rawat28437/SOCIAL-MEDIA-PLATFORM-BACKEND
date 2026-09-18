@@ -5,6 +5,68 @@ const { postModel } = require("../models/post.model")
 
 const router = express.Router()
 
+
+
+router.get("/my-likes", async (req, res) => {
+
+    try {
+
+        const userId = req.foundUser._id
+
+        const page = parseInt(req.query.page) || 1
+        const limit = parseInt(req.query.limit) || 18
+        const skip = (page - 1) * limit
+
+        const totalLikes = await likeModel.countDocuments({
+            user: userId
+        })
+
+        const likes = await likeModel
+            .find({
+                user: userId
+            })
+            .populate({
+                path: "post",
+                select:
+                    "content imgUrl authorId likesCount commentsCount repostsCount createdAt",
+                populate: {
+                    path: "authorId",
+                    select:
+                        "displayPicture username firstName lastName"
+                }
+            })
+            .sort({
+                createdAt: -1
+            })
+            .skip(skip)
+            .limit(limit)
+
+        const hasMore =
+            skip + likes.length < totalLikes
+
+        return res.status(200).json({
+            success: true,
+            data: likes,
+            pagination: {
+                page,
+                limit,
+                total: totalLikes,
+                hasMore
+            }
+        })
+
+    } catch (error) {
+
+        console.log(error)
+
+        return res.status(500).json({
+            success: false,
+            msg: "Unable to get liked posts"
+        })
+    }
+})
+
+
 router.post("/:postId", async (req, res) => {
 
     try {
@@ -39,7 +101,7 @@ router.post("/:postId", async (req, res) => {
                 }
             },
             {
-                new: true
+                returnDocument: "after"
             }
         )
 

@@ -10,7 +10,7 @@ const isLoggedIn = async(req, res, next) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
     
-        const foundUser= await userModel.findById(decoded.id)
+        const foundUser= await userModel.findById(decoded.id).select("_id firstName lastName username displayPicture ")
         
         if(!foundUser) throw new Error("token is invalid")
 

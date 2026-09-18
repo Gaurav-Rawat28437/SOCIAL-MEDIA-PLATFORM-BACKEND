@@ -1,13 +1,14 @@
-const express=require("express")
+const express = require("express")
 const { postModel } = require("../models/post.model")
-const router=express.Router()
+const router = express.Router()
 const { likeModel } = require("../models/like.model")
+const { userModel } = require("../models/User.model")
 
 router.post("/create", async (req, res) => {
     try {
         const { content, imgUrl } = req.body
 
-        const foundUser=req.foundUser
+        const foundUser = req.foundUser
 
         if (!content?.trim() && !imgUrl) {
             throw new Error("Post must have content or image")
@@ -19,9 +20,26 @@ router.post("/create", async (req, res) => {
             imgUrl
         })
 
+        if (imgUrl) {
+            await userModel.findByIdAndUpdate(foundUser._id, {
+                $inc: {
+                    postCount: 1
+                }
+            })
+        }
+        else {
+            await userModel.findByIdAndUpdate(foundUser._id, {
+                $inc: {
+                    thoughtCount: 1
+                }
+            })
+        }
+
+
+
         res.status(201).json({
             success: true,
-            msg: createdPost.imgUrl?"Post uploaded successfully":"Thought uploaded successfully",
+            msg: createdPost.imgUrl ? "Post uploaded successfully" : "Thought uploaded successfully",
             data: createdPost
         })
     } catch (error) {
@@ -91,7 +109,7 @@ router.delete("/delete/:postId", async (req, res) => {
     try {
 
         const { postId } = req.params
-        const foundUser=req.foundUser
+        const foundUser = req.foundUser
 
         const deletedPost = await postModel.findOneAndDelete({
             _id: postId,
@@ -105,9 +123,29 @@ router.delete("/delete/:postId", async (req, res) => {
             })
         }
 
+        if (deletedPost.imgUrl) {
+            await userModel.findByIdAndUpdate(foundUser._id, {
+                $inc: {
+                    postCount: -1
+                }
+            }
+            )
+        }
+        else {
+            await userModel.findByIdAndUpdate(foundUser._id, {
+                $inc: {
+                    thoughtCount: -1
+                }
+            }
+            )
+        }
+
+
+
+
         res.status(200).json({
             success: true,
-            msg: "Post deleted successfully"
+            msg: deletedPost.imgUrl ? "Post deleted successfully" : "Thought deleted successfully"
         })
 
     } catch (error) {
@@ -149,7 +187,7 @@ router.patch("/edit/:postId", async (req, res) => {
 
         res.status(200).json({
             success: true,
-            msg: updatedPost.imgUrl?"Post updated successfully":"Thought updated successfully",
+            msg: updatedPost.imgUrl ? "Post updated successfully" : "Thought updated successfully",
             data: updatedPost
         })
 
@@ -318,6 +356,119 @@ router.get("/:postId", async (req, res) => {
 })
 
 
-module.exports={
-    postRouter:router
+router.get("/user/:userId/posts", async (req, res) => {
+    try {
+
+        const { userId } = req.params
+
+        const page = Number(req.query.page || 1)
+        const limit = Number(req.query.limit || 18)
+
+        const skip = (page - 1) * limit
+
+        const posts = await postModel
+            .find({
+                authorId: userId,
+                imgUrl: { $ne: "" }
+            })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit + 1)
+
+        const hasMore = posts.length > limit
+
+        if (hasMore) {
+            posts.pop()
+        }
+
+        const postsWithLike = await Promise.all(
+            posts.map(async (post) => {
+
+                const like = await likeModel.findOne({
+                    user: req.foundUser._id,
+                    post: post._id
+                })
+
+                return {
+                    ...post.toObject(),
+                    isLiked: !!like
+                }
+            })
+        )
+
+        res.status(200).json({
+            success: true,
+            data: postsWithLike,
+            hasMore
+        })
+
+    } catch (error) {
+
+        res.status(400).json({
+            success: false,
+            msg: error.message
+        })
+
+    }
+})
+
+
+router.get("/user/:userId/thoughts", async (req, res) => {
+    try {
+
+        const { userId } = req.params
+
+        const page = Number(req.query.page || 1)
+        const limit = Number(req.query.limit || 18)
+
+        const skip = (page - 1) * limit
+
+        const thoughts = await postModel
+            .find({
+                authorId: userId,
+                imgUrl: ""
+            })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit + 1)
+
+        const hasMore = thoughts.length > limit
+
+        if (hasMore) {
+            thoughts.pop()
+        }
+
+        const thoughtsWithLike = await Promise.all(
+            thoughts.map(async (thought) => {
+
+                const like = await likeModel.findOne({
+                    user: req.foundUser._id,
+                    post: thought._id
+                })
+
+                return {
+                    ...thought.toObject(),
+                    isLiked: !!like
+                }
+            })
+        )
+
+        res.status(200).json({
+            success: true,
+            data: thoughtsWithLike,
+            hasMore
+        })
+
+    } catch (error) {
+
+        res.status(400).json({
+            success: false,
+            msg: error.message
+        })
+
+    }
+})
+
+module.exports = {
+    postRouter: router
 }

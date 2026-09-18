@@ -268,6 +268,7 @@ router.post("/login", loginLimiter, async (req, res) => {
             success: true,
             msg: "user login successfully",
              data:{
+                 _id: foundUser._id,
                 firstName: foundUser.firstName,
                 lastName: foundUser.lastName,
                 username: foundUser.username,
@@ -278,9 +279,10 @@ router.post("/login", loginLimiter, async (req, res) => {
                 coverPicture: foundUser.coverPicture,
                 bio: foundUser.bio,
                 isCompletedProfile: foundUser.isCompletedProfile,
-                followers: foundUser.followers,
-                following: foundUser.following,
-                posts: foundUser.posts,
+                followersCount: foundUser.followersCount,
+                followingCount: foundUser.followingCount,
+                postCount: foundUser.postCount,
+                thoughtCount: foundUser.thoughtCount,
                 createdAt:foundUser.createdAt
             }
         })
@@ -332,6 +334,7 @@ router.get("/get-user-data", async(req, res)=>{
             success: true,
             msg: "user login successfully",
             data:{
+                 _id: foundUser._id,
                 firstName: foundUser.firstName,
                 lastName: foundUser.lastName,
                 username: foundUser.username,
@@ -342,9 +345,10 @@ router.get("/get-user-data", async(req, res)=>{
                 coverPicture: foundUser.coverPicture,
                 bio: foundUser.bio,
                 isCompletedProfile: foundUser.isCompletedProfile,
-                followers: foundUser.followers,
-                following: foundUser.following,
-                posts: foundUser.posts,
+                followersCount: foundUser.followersCount,
+                followingCount: foundUser.followingCount,
+                postCount: foundUser.postCount,
+                thoughtCount: foundUser.thoughtCount,
                 createdAt:foundUser.createdAt
             }
         })
