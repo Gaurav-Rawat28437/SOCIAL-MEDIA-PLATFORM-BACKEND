@@ -261,8 +261,13 @@ router.post("/login", loginLimiter, async (req, res) => {
 
         const token = jwt.sign({ id: foundUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" }) //can add expireing data init by passing {expiresIn:"7d"} it will expire in 7days
 
+        const isProduction = process.env.NODE_ENV === "production"
+
         res.cookie("token", token, {
-            maxAge: 7 * 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
         })
 
         res.set("Cache-Control", "no-store")
