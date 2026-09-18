@@ -140,6 +140,7 @@ router.delete("/follow/:userId", async (req, res) => {
 router.get("/follow/:userId/followers", async (req, res) => {
     try {
         const userId = req.params.userId
+        const loggedInUser = req.foundUser._id
 
         const page = Number(req.query.page) || 1
         const limit = Number(req.query.limit) || 10
@@ -151,13 +152,39 @@ router.get("/follow/:userId/followers", async (req, res) => {
             .skip(skip)
             .limit(limit)
 
+
+        const newFollower=await Promise.all(
+            followers.map(async(item)=>{
+                
+            const itemUserId=item.follower._id
+
+            if(String(itemUserId)===String(loggedInUser))
+            {
+                return {...item.toObject(),isFollowing:null}
+            }
+
+           const isexist=await followModel.exists({
+            follower:loggedInUser,
+            following:itemUserId
+           })
+
+           if(isexist)
+           {
+            return{...item.toObject(),isFollowing:true}
+           }
+           else{
+            return {...item.toObject(),isFollowing:false}
+           }
+        }))
+
+        
         const totalFollowers = await followModel.countDocuments({
             following: userId
         })
 
         return res.status(200).json({
             success: true,
-            data: followers,
+            data: newFollower,
             page,
             limit,
             total: totalFollowers,
@@ -177,6 +204,7 @@ router.get("/follow/:userId/followers", async (req, res) => {
 router.get("/follow/:userId/following", async (req, res) => {
     try {
         const userId = req.params.userId
+        const loggedInUser=req.foundUser._id
 
         const page = Number(req.query.page) || 1
         const limit = Number(req.query.limit) || 10
@@ -187,6 +215,33 @@ router.get("/follow/:userId/following", async (req, res) => {
             .populate("following", "_id username firstName lastName displayPicture")
             .skip(skip)
             .limit(limit)
+        
+        
+            const newfollowing=await Promise.all(
+            following.map(async(item)=>{
+
+            const itemUserId=item.following._id
+           
+
+           if(String(itemUserId)===String(loggedInUser))
+            {
+                return {...item.toObject(),isFollowing:null}
+            }
+
+           const isexist=await followModel.exists({
+            follower:loggedInUser,
+            following:itemUserId
+           })
+
+           if(isexist)
+           {
+            return{...item.toObject(),isFollowing:true}
+           }
+           else{
+            return {...item.toObject(),isFollowing:false}
+           }
+        }))
+
 
         const totalFollowing = await followModel.countDocuments({
             follower: userId
@@ -194,7 +249,7 @@ router.get("/follow/:userId/following", async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            data: following,
+            data: newfollowing,
             page,
             limit,
             total: totalFollowing,

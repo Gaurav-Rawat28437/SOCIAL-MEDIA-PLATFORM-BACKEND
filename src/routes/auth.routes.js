@@ -69,7 +69,7 @@ router.post("/send-otp", otpLimiter, async (req, res) => {
                     </div>
 
                     <p style="font-size: 14px; color: #6b7280; line-height: 1.5;">
-                        This verification code will expire in <strong>2 minutes</strong>.
+                        This verification code will expire in <strong>3 minutes</strong>.
                         Please do not share this code with anyone.
                     </p>
 
@@ -91,7 +91,7 @@ router.post("/send-otp", otpLimiter, async (req, res) => {
             throw new Error("Unable to send OTP email. Please try again.")
         }
 
-        const createOtp = await otpModel.findOneAndUpdate({ email }, { otp }, { upsert: true, new: true })
+        const createOtp = await otpModel.findOneAndUpdate({ email }, { otp, expireAt: new Date() }, { upsert: true, returnDocument: "after" })
 
         if (!createOtp) {
             throw new Error("opt not save in mongo")
@@ -113,6 +113,7 @@ router.post("/send-otp", otpLimiter, async (req, res) => {
 router.post("/verify-otp", verifyLimiter, async (req, res) => {
     try {
         const { email, otp } = req.body
+        console.log(email, typeof (otp))
 
         if (!email || !otp) {
             throw new Error("email or otp not received from frontend")
@@ -123,18 +124,20 @@ router.post("/verify-otp", verifyLimiter, async (req, res) => {
         }
 
         const foundOtp = await otpModel.findOne({ email, otp })
+        console.log(foundOtp)
 
         if (!foundOtp) {
             throw new Error("Invalid OTP,please try again...")
         }
 
         const expiryTime = new Date(
-            foundOtp.expireAt.getTime() + 120 * 1000
+            foundOtp.expireAt.getTime() + 180 * 1000
         )
+
         if (expiryTime < new Date()) {
             await otpModel.deleteOne({
                 _id: foundOtp._id
-            });
+            })
 
             throw new Error("OTP has expired, please request a new OTP")
         }
@@ -258,8 +261,8 @@ router.post("/login", loginLimiter, async (req, res) => {
 
         const token = jwt.sign({ id: foundUser._id }, process.env.JWT_SECRET, { expiresIn: "7d" }) //can add expireing data init by passing {expiresIn:"7d"} it will expire in 7days
 
-        res.cookie("token", token, { 
-            maxAge: 7 * 24 * 60 * 60 * 1000 ,
+        res.cookie("token", token, {
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         })
 
         res.set("Cache-Control", "no-store")
@@ -267,8 +270,8 @@ router.post("/login", loginLimiter, async (req, res) => {
         res.status(200).json({
             success: true,
             msg: "user login successfully",
-             data:{
-                 _id: foundUser._id,
+            data: {
+                _id: foundUser._id,
                 firstName: foundUser.firstName,
                 lastName: foundUser.lastName,
                 username: foundUser.username,
@@ -283,7 +286,7 @@ router.post("/login", loginLimiter, async (req, res) => {
                 followingCount: foundUser.followingCount,
                 postCount: foundUser.postCount,
                 thoughtCount: foundUser.thoughtCount,
-                createdAt:foundUser.createdAt
+                createdAt: foundUser.createdAt
             }
         })
     }
@@ -296,9 +299,9 @@ router.post("/login", loginLimiter, async (req, res) => {
 })
 
 
-router.post("/logout",isLoggedIn, async (req, res) => {
+router.post("/logout", isLoggedIn, async (req, res) => {
     try {
-        res.cookie("token","GauravSinghRawat")
+        res.cookie("token", "GauravSinghRawat")
         res.status(200).json({
             success: true,
             msg: "user logout successfully"
@@ -313,28 +316,28 @@ router.post("/logout",isLoggedIn, async (req, res) => {
 })
 
 
-router.get("/get-user-data", async(req, res)=>{
+router.get("/get-user-data", async (req, res) => {
 
-    try{
-        const {token}=req.cookies
+    try {
+        const { token } = req.cookies
 
         if (!token) {
             throw new Error("Please login again")
         }
 
-        const decode=jwt.verify(token,process.env.JWT_SECRET)
-         
-        const foundUser= await userModel.findById(decode.id)
-    
-        if(!foundUser) throw new Error("User logout,please login again...")
+        const decode = jwt.verify(token, process.env.JWT_SECRET)
+
+        const foundUser = await userModel.findById(decode.id)
+
+        if (!foundUser) throw new Error("User logout,please login again...")
 
         res.set("Cache-Control", "no-store")
 
         res.status(200).json({
             success: true,
             msg: "user login successfully",
-            data:{
-                 _id: foundUser._id,
+            data: {
+                _id: foundUser._id,
                 firstName: foundUser.firstName,
                 lastName: foundUser.lastName,
                 username: foundUser.username,
@@ -349,12 +352,12 @@ router.get("/get-user-data", async(req, res)=>{
                 followingCount: foundUser.followingCount,
                 postCount: foundUser.postCount,
                 thoughtCount: foundUser.thoughtCount,
-                createdAt:foundUser.createdAt
+                createdAt: foundUser.createdAt
             }
         })
 
     }
-    catch(error) {
+    catch (error) {
         res.status(401).json({
             msg: error.message,
             error: error

@@ -16,7 +16,7 @@ const { userRouter } = require("./routes/user.routes")
 
 
 app.use(cors({
-    origin:[process.env.FE_URL,"http://localhost:5173","http://localhost:5174"],
+    origin:[process.env.FE_URL,"http://localhost:5173","http://localhost:5174","http://localhost:5175"],
     credentials: true
 }))
 
