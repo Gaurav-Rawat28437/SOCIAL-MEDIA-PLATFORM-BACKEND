@@ -313,7 +313,7 @@ router.post("/logout", isLoggedIn, async (req, res) => {
             secure: isProduction,
             sameSite: isProduction ? "none" : "lax"
         })
-        
+
         res.status(200).json({
             success: true,
             msg: "user logout successfully"
@@ -373,6 +373,35 @@ router.get("/get-user-data", async (req, res) => {
         res.status(401).json({
             msg: error.message,
             error: error
+        })
+    }
+})
+
+router.get("/check-username", async (req, res) => {
+    try {
+        const { username } = req.query
+
+        if (!username) {
+            return res.status(400).json({
+                success: false,
+                msg: "Username is required"
+            })
+        }
+
+        const existingUser = await userModel.findOne({ username })
+
+        if (existingUser) {
+            throw new Error("Username is already taken")
+        }
+
+        res.status(200).json({
+            success: true,
+            msg: "Username is available"
+        })
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            msg: error
         })
     }
 })
