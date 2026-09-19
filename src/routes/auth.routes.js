@@ -391,7 +391,10 @@ router.get("/check-username", async (req, res) => {
         const existingUser = await userModel.findOne({ username })
 
         if (existingUser) {
-            throw new Error("Username is already taken")
+            return res.status(409).json({
+                success: false,
+                msg: "Username is already taken"
+            })
         }
 
         res.status(200).json({
@@ -401,7 +404,7 @@ router.get("/check-username", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            msg: error
+            msg: error.message
         })
     }
 })
