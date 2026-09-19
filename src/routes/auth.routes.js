@@ -113,7 +113,6 @@ router.post("/send-otp", otpLimiter, async (req, res) => {
 router.post("/verify-otp", verifyLimiter, async (req, res) => {
     try {
         const { email, otp } = req.body
-        console.log(email, typeof (otp))
 
         if (!email || !otp) {
             throw new Error("email or otp not received from frontend")
@@ -124,7 +123,6 @@ router.post("/verify-otp", verifyLimiter, async (req, res) => {
         }
 
         const foundOtp = await otpModel.findOne({ email, otp })
-        console.log(foundOtp)
 
         if (!foundOtp) {
             throw new Error("Invalid OTP,please try again...")
