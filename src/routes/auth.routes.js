@@ -306,7 +306,14 @@ router.post("/login", loginLimiter, async (req, res) => {
 
 router.post("/logout", isLoggedIn, async (req, res) => {
     try {
-        res.cookie("token", "GauravSinghRawat")
+        const isProduction = process.env.NODE_ENV === "production"
+
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax"
+        })
+        
         res.status(200).json({
             success: true,
             msg: "user logout successfully"
