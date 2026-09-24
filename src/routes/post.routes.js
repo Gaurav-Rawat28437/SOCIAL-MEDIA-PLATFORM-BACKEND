@@ -18,7 +18,10 @@ router.post("/create", async (req, res) => {
             authorId: foundUser._id,
             content: content?.trim(),
             imgUrl
-        })
+        }).populate(
+            "authorId",
+            "firstName lastName username displayPicture"
+        )
 
         if (imgUrl) {
             await userModel.findByIdAndUpdate(foundUser._id, {
