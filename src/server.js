@@ -38,7 +38,7 @@ io.on("connection", (socket) => {
         socket.join(roomId)
     })
 
-    socket.on("send-msg", async ({ sender, receiver, text }) => {
+    socket.on("send-msg", async ({ sender, receiver, text, senderUser }) => {
 
         const roomId = [sender.trim(), receiver.trim()].sort().join("")
 
@@ -92,7 +92,8 @@ io.on("connection", (socket) => {
         if (receiverSocket) {
             receiverSocket.emit("receive-global-listener", {
                 sender,
-                receiver
+                receiver,
+                senderUser,
             })
         }
 
