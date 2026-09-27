@@ -12,6 +12,7 @@ const { likeRouter } = require("./routes/like.routes")
 const { commentRouter } = require("./routes/comment.routes")
 const { userRouter } = require("./routes/user.routes")
 const { chatRouter } = require("./routes/chat.routes")
+const { notificationRouter } = require("./routes/notification.route")
 
 
 
@@ -31,6 +32,7 @@ app.use("/api/like",isLoggedIn,likeRouter)
 app.use("/api/comment",isLoggedIn,commentRouter)
 app.use("/api/user", isLoggedIn, userRouter)
 app.use("/api/chat",isLoggedIn,chatRouter)
+app.use("/api/notification",isLoggedIn,notificationRouter)
 
 app.use((req,res)=>{
     res.status(400).json({

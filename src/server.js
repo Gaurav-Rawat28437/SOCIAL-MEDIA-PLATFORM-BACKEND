@@ -16,10 +16,11 @@ dns.setServers([
 const server = http.createServer(app)
 const { chatMessage } = require("./models/chatMessage.modal")
 const { chatListModel } = require("./models/chatList.model")
+const { notificationModel } = require("./models/notification.model")
 
 const io = fn(server, {
     cors: {
-        origin: [process.env.FE_URL, "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]
+        origin: [process.env.FE_URL, "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176"]
     },
     // credentials:true,
 })
@@ -38,7 +39,7 @@ io.on("connection", (socket) => {
         socket.join(roomId)
     })
 
-    socket.on("send-msg", async ({ sender, receiver, text, senderUser }) => {
+    socket.on("send-msg", async ({ sender, receiver, text, senderUser, reply }) => {
 
         const roomId = [sender.trim(), receiver.trim()].sort().join("")
 
@@ -46,6 +47,7 @@ io.on("connection", (socket) => {
             sender,
             receiver,
             text,
+            reply: reply ? reply._id : null
         })
 
         const senderChatList = await chatListModel.findOne({
@@ -83,7 +85,8 @@ io.on("connection", (socket) => {
             receiver,
             text,
             _id: message._id,
-            createdAt: message.createdAt
+            createdAt: message.createdAt,
+            reply
         })
 
         const receiverSocket = [...io.sockets.sockets.values()]
@@ -111,7 +114,47 @@ io.on("connection", (socket) => {
 
     })
 
+    socket.on("send-notification", async ({ notification }) => {
 
+        const notificationData = await notificationModel.findById(notification)
+            .populate(
+                "sender",
+                "_id username firstName lastName displayPicture"
+            )
+            .populate(
+                "post",
+                "_id content imgUrl authorId"
+            )
+
+        if (!notificationData) {
+            return
+        }
+
+        const receiverSocket = [...io.sockets.sockets.values()]
+            .find(socket => socket.userId === notificationData.receiver.toString())
+
+        if (receiverSocket) {
+            receiverSocket.emit("receive-notification", { notificationData })
+        }
+    })
+
+    socket.on("send-like-update", ({ postId, likesCount, userId }) => {
+        io.emit("receive-like-update", {
+            postId,
+            likesCount,
+            userId
+        })
+    })
+
+    socket.on("send-comment-update", ({ postId, commentsCount, userId }) => {
+
+        io.emit("receive-comment-update", {
+            postId,
+            commentsCount,
+            userId
+        })
+
+    })
 
 
 

@@ -3,6 +3,7 @@ const router = express.Router()
 
 const { postModel } = require("../models/post.model")
 const { commentModel } = require("../models/comment.model")
+const { notificationModel } = require("../models/notification.model")
 
 
 
@@ -48,11 +49,23 @@ router.post("/create/:postId", async (req, res) => {
             }
         )
 
+        let notification = null
+
+        if (String(post.authorId) !== String(userId)) {
+            notification = await notificationModel.create({
+                receiver: post.authorId,
+                sender: userId,
+                type: "comment",
+                post: postId
+            })
+        }
+
         return res.status(201).json({
             success: true,
             msg: "Comment added successfully",
             data: comment,
-            commentsCount: updatedPost.commentsCount
+            commentsCount: updatedPost.commentsCount,
+            notification: notification?._id
         })
 
     } catch (error) {

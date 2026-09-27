@@ -2,6 +2,7 @@ const express = require("express")
 
 const { likeModel } = require("../models/like.model")
 const { postModel } = require("../models/post.model")
+const { notificationModel } = require("../models/notification.model")
 
 const router = express.Router()
 
@@ -88,6 +89,15 @@ router.post("/:postId", async (req, res) => {
             })
         }
 
+        const post = await postModel.findById(postId)
+
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                msg: "Post not found"
+            })
+        }
+
         await likeModel.create({
             user: userId,
             post: postId
@@ -105,10 +115,22 @@ router.post("/:postId", async (req, res) => {
             }
         )
 
+        let notification = null
+
+        if (String(post.authorId) !== String(userId)) {
+            notification = await notificationModel.create({
+                receiver: post.authorId,
+                sender: userId,
+                type: "like",
+                post: postId
+            })
+        }
+
         return res.status(200).json({
             success: true,
             msg: "Post liked successfully",
-            likesCount: updatedPost.likesCount
+            likesCount: updatedPost.likesCount,
+            notification: notification?._id
         })
 
     } catch (error) {

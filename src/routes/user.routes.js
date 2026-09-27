@@ -1,6 +1,7 @@
 const express = require("express")
 const { userModel } = require("../models/User.model")
 const { followModel } = require("../models/follow.model")
+const { notificationModel } = require("../models/notification.model")
 
 const router = express.Router()
 
@@ -89,9 +90,16 @@ router.post("/follow/:userId",async(req,res)=>{
             $inc: { followersCount: 1 }
         })
 
+       const notification =await notificationModel.create({
+            receiver: followingId,
+            sender: followerId,
+            type: "follow"
+        })
+
         return res.status(201).json({
             success: true,
-            message: "User followed successfully"
+            message: "User followed successfully",
+            notification:notification._id
         })
 
     } catch (error) {

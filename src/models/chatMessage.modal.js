@@ -4,13 +4,13 @@ const chatMessageSchema = new mongoose.Schema({
 
     sender: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "user",
         required: true
     },
 
     receiver: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "user",
         required: true
     },
 
@@ -22,6 +22,11 @@ const chatMessageSchema = new mongoose.Schema({
     isSeen: {
         type: Boolean,
         default: false
+    },
+    reply: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "chatMessage",
+        default: null
     }
 
 }, {

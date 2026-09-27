@@ -131,6 +131,10 @@ router.get("/user-chatMessage/:userId", async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
+            .populate(
+                "reply",
+                "_id text"
+            )
 
         messages.reverse()
 
@@ -245,6 +249,30 @@ router.patch("/user-chatList/:userId/top", async (req, res) => {
         return res.status(500).json({
             success: false,
             msg: error.message
+        })
+    }
+})
+
+router.get("/unread-count", async (req, res) => {
+    try {
+        const loggedInUser = req.foundUser
+
+        const unreadCount = await chatMessage.countDocuments({
+            receiver: loggedInUser._id,
+            isSeen: false
+        })
+
+        return res.status(200).json({
+            success: true,
+            unreadCount
+        })
+
+    } catch (error) {
+        console.log(error)
+
+        return res.status(500).json({
+            success: false,
+            msg: "Failed to get unread message count"
         })
     }
 })
