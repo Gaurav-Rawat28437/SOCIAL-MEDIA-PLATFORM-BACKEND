@@ -34,12 +34,6 @@ app.use("/api/user", isLoggedIn, userRouter)
 app.use("/api/chat",isLoggedIn,chatRouter)
 app.use("/api/notification",isLoggedIn,notificationRouter)
 
-app.use((req,res)=>{
-    res.status(400).json({
-        error:"api not found,this api is not a part of server"
-    })
-})
-
 app.get("/",(req,res)=>{
     try{
         res.json({
@@ -54,5 +48,12 @@ app.get("/",(req,res)=>{
         })
     }
 })
+
+app.use((req,res)=>{
+    res.status(400).json({
+        error:"api not found,this api is not a part of server"
+    })
+})
+
 
 module.exports=app
